@@ -13,6 +13,7 @@ from app.database import get_db
 from app.models.replicate import ReplicateStatus
 from app.models.user import User
 from app.services.experiment import ExperimentService
+from app.services.note import NoteService
 from app.services.project import ProjectService
 from app.services.replicate import ReplicateService
 from app.services.user import UserService
@@ -289,6 +290,9 @@ async def view_replicate(
             status_code=status.HTTP_302_FOUND,
         )
 
+    note_service = NoteService(db)
+    notes = note_service.list_notes(replicate=replicate)
+
     return templates.TemplateResponse(
         "replicates/detail.html",
         {
@@ -297,6 +301,7 @@ async def view_replicate(
             "project": project,
             "experiment": experiment,
             "replicate": replicate,
+            "notes": notes,
             "statuses": ReplicateStatus,
         },
     )

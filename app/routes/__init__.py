@@ -6,6 +6,7 @@ from app.routes.projects import router as projects_router
 from app.routes.experiments import router as experiments_router
 from app.routes.replicates import router as replicates_router
 from app.routes.todos import router as todos_router
+from app.routes.notes import router as notes_router
 
 __all__ = [
     "auth_router",
@@ -14,4 +15,5 @@ __all__ = [
     "experiments_router",
     "replicates_router",
     "todos_router",
+    "notes_router",
 ]

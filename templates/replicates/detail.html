@@ -115,7 +115,7 @@
             </div>
 
             <!-- Details -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <!-- Results Link -->
                 <div class="bg-white shadow rounded-lg">
                     <div class="px-4 py-5 sm:p-6">
@@ -130,18 +130,77 @@
                     </div>
                 </div>
 
-                <!-- Notes -->
+                <!-- Inline Notes -->
                 <div class="bg-white shadow rounded-lg">
                     <div class="px-4 py-5 sm:p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Notes</h3>
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Summary Notes</h3>
                         {% if replicate.notes_text %}
                         <div class="prose prose-sm max-w-none">
                             <p class="whitespace-pre-wrap">{{ replicate.notes_text }}</p>
                         </div>
                         {% else %}
-                        <p class="text-gray-500 italic">No notes added</p>
+                        <p class="text-gray-500 italic">No summary notes added</p>
                         {% endif %}
                     </div>
+                </div>
+            </div>
+
+            <!-- Notes section -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Observation Notes</h3>
+                    </div>
+
+                    <!-- Add note form -->
+                    <form method="POST" action="/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/{{ replicate.id }}/notes/new" class="mb-6">
+                        <div class="mb-2">
+                            <textarea
+                                name="content"
+                                rows="3"
+                                class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm font-mono"
+                                placeholder="Add an observation note (Markdown supported)..."
+                            ></textarea>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                                Add Note
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Notes list -->
+                    {% if notes %}
+                    <div class="space-y-4">
+                        {% for note in notes %}
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="text-sm text-gray-500">
+                                    <span class="font-medium text-gray-700">{{ note.author.name }}</span>
+                                    &middot;
+                                    {{ note.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                                <div class="flex gap-2">
+                                    <a href="/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/{{ replicate.id }}/notes/{{ note.id }}/edit"
+                                       class="text-gray-400 hover:text-gray-600 text-sm">
+                                        Edit
+                                    </a>
+                                    <form method="POST" action="/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/{{ replicate.id }}/notes/{{ note.id }}/delete"
+                                          class="inline"
+                                          onsubmit="return confirm('Delete this note?');">
+                                        <button type="submit" class="text-red-400 hover:text-red-600 text-sm">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="prose prose-sm max-w-none note-content">{{ note.content }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500 text-center py-4">No observation notes yet.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -149,4 +208,13 @@
 </div>
 
 <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<!-- Markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.note-content').forEach(function(el) {
+        el.innerHTML = marked.parse(el.textContent);
+    });
+});
+</script>
 {% endblock %}

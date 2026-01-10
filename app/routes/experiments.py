@@ -13,6 +13,7 @@ from app.database import get_db
 from app.models.experiment import ExperimentStatus
 from app.models.user import User
 from app.services.experiment import ExperimentService
+from app.services.note import NoteService
 from app.services.project import ProjectService
 
 
@@ -247,7 +248,9 @@ async def view_experiment(
             status_code=status.HTTP_302_FOUND,
         )
 
+    note_service = NoteService(db)
     stats = experiment_service.get_experiment_stats(experiment)
+    notes = note_service.list_notes(experiment=experiment)
 
     return templates.TemplateResponse(
         "experiments/detail.html",
@@ -257,6 +260,7 @@ async def view_experiment(
             "project": project,
             "experiment": experiment,
             "stats": stats,
+            "notes": notes,
         },
     )
 
