@@ -40,40 +40,164 @@
     <!-- Main content -->
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div class="px-4 py-6 sm:px-0">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">Welcome, {{ user.name }}</h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Welcome back, {{ user.name }}</h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Projects card -->
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div class="bg-white overflow-hidden shadow rounded-lg">
                     <div class="px-4 py-5 sm:p-6">
-                        <h3 class="text-lg font-medium text-gray-900">Projects</h3>
-                        <p class="mt-1 text-sm text-gray-500">View and manage your research projects.</p>
-                        <a href="/projects" class="mt-4 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
-                            View projects &rarr;
-                        </a>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Projects</dt>
+                        <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.project_count }}</dd>
                     </div>
                 </div>
-
-                <!-- Todos card -->
                 <div class="bg-white overflow-hidden shadow rounded-lg">
                     <div class="px-4 py-5 sm:p-6">
-                        <h3 class="text-lg font-medium text-gray-900">Todos</h3>
-                        <p class="mt-1 text-sm text-gray-500">Track your tasks and to-do items.</p>
-                        <a href="/todos" class="mt-4 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
-                            View todos &rarr;
-                        </a>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Experiments</dt>
+                        <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.experiment_count }}</dd>
                     </div>
                 </div>
-
-                <!-- Quick actions card -->
                 <div class="bg-white overflow-hidden shadow rounded-lg">
                     <div class="px-4 py-5 sm:p-6">
-                        <h3 class="text-lg font-medium text-gray-900">Quick Actions</h3>
-                        <div class="mt-4 space-y-2">
-                            <a href="/projects/new" class="block text-sm text-blue-600 hover:text-blue-500">+ New Project</a>
-                            <a href="/todos/new" class="block text-sm text-blue-600 hover:text-blue-500">+ New Todo</a>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Replicates</dt>
+                        <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ stats.replicate_count }}</dd>
+                    </div>
+                </div>
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <dt class="text-sm font-medium text-gray-500 truncate">My Todos</dt>
+                        <dd class="mt-1 text-3xl font-semibold text-blue-600">{{ stats.todo_count }}</dd>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- My Todos -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">My Todos</h3>
+                            <a href="/todos" class="text-sm text-blue-600 hover:text-blue-800">View all &rarr;</a>
+                        </div>
+                        {% if my_todos %}
+                        <ul class="divide-y divide-gray-200">
+                            {% for todo in my_todos %}
+                            <li class="py-3">
+                                <a href="/todos/{{ todo.id }}" class="block hover:bg-gray-50 -mx-4 px-4 rounded">
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-sm font-medium text-gray-900 truncate">{{ todo.title }}</p>
+                                        {% if todo.priority.value == "high" %}
+                                        <span class="px-2 py-0.5 text-xs font-medium rounded bg-red-100 text-red-800">High</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if todo.project %}
+                                    <p class="text-xs text-gray-500 mt-1">{{ todo.project.name }}</p>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-gray-500 text-sm text-center py-4">No open todos</p>
+                        {% endif %}
+                        <div class="mt-4">
+                            <a href="/todos/new" class="block text-center text-sm text-blue-600 hover:text-blue-800">+ Add Todo</a>
                         </div>
                     </div>
+                </div>
+
+                <!-- Recent Projects -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">Recent Projects</h3>
+                            <a href="/projects" class="text-sm text-blue-600 hover:text-blue-800">View all &rarr;</a>
+                        </div>
+                        {% if recent_projects %}
+                        <ul class="divide-y divide-gray-200">
+                            {% for project in recent_projects %}
+                            <li class="py-3">
+                                <a href="/projects/{{ project.id }}" class="block hover:bg-gray-50 -mx-4 px-4 rounded">
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-sm font-medium text-gray-900 truncate">{{ project.name }}</p>
+                                        {% if project.status.value == "active" %}
+                                        <span class="px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-800">Active</span>
+                                        {% elif project.status.value == "on_hold" %}
+                                        <span class="px-2 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-800">On Hold</span>
+                                        {% elif project.status.value == "completed" %}
+                                        <span class="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">Complete</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">{{ project.experiments|length }} experiments</p>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-gray-500 text-sm text-center py-4">No projects yet</p>
+                        {% endif %}
+                        <div class="mt-4">
+                            <a href="/projects/new" class="block text-center text-sm text-blue-600 hover:text-blue-800">+ New Project</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
+                        {% if recent_activities %}
+                        <ul class="space-y-3">
+                            {% for activity in recent_activities %}
+                            <li class="text-sm">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        {% if activity.action == "create" %}
+                                        <span class="inline-block w-2 h-2 rounded-full bg-green-500 mt-1.5"></span>
+                                        {% elif activity.action == "update" %}
+                                        <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mt-1.5"></span>
+                                        {% elif activity.action == "archive" %}
+                                        <span class="inline-block w-2 h-2 rounded-full bg-gray-500 mt-1.5"></span>
+                                        {% elif activity.action == "delete" %}
+                                        <span class="inline-block w-2 h-2 rounded-full bg-red-500 mt-1.5"></span>
+                                        {% else %}
+                                        <span class="inline-block w-2 h-2 rounded-full bg-gray-400 mt-1.5"></span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-gray-900">
+                                            <span class="font-medium">{{ activity.user.name }}</span>
+                                            {{ activity.action }}d
+                                            {{ activity.entity_type }}
+                                            {% if activity.metadata_json and activity.metadata_json.name %}
+                                            <span class="text-gray-600">"{{ activity.metadata_json.name }}"</span>
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-xs text-gray-500">{{ activity.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                    </div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-gray-500 text-sm text-center py-4">No recent activity</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="mt-8">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+                <div class="flex flex-wrap gap-3">
+                    <a href="/projects/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                        + New Project
+                    </a>
+                    <a href="/todos/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                        + New Todo
+                    </a>
+                    <a href="/todos/kanban" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+                        View Kanban Board
+                    </a>
                 </div>
             </div>
         </div>

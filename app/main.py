@@ -10,8 +10,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from sqlalchemy.orm import Session
+
 from app.auth.dependencies import get_current_user_optional
 from app.config import get_settings
+from app.database import get_db
 from app.models.user import User
 from app.routes.auth import router as auth_router
 from app.routes.admin import router as admin_router
@@ -79,12 +82,14 @@ async def health_check() -> dict:
 async def root(
     request: Request,
     user: Annotated[Optional[User], Depends(get_current_user_optional)],
+    db: Annotated[Session, Depends(get_db)],
 ):
     """Root endpoint - redirects to login or dashboard.
 
     Args:
         request: FastAPI request.
         user: Current user if authenticated.
+        db: Database session.
 
     Returns:
         Redirect to appropriate page.
@@ -92,11 +97,47 @@ async def root(
     if not user:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
-    # For now, show a simple dashboard placeholder
+    # Import services here to avoid circular imports
+    from app.services.project import ProjectService
+    from app.services.todo import TodoService
+    from app.services.activity import ActivityService
+
+    project_service = ProjectService(db)
+    todo_service = TodoService(db)
+    activity_service = ActivityService(db)
+
+    # Get stats
+    projects = project_service.list_projects()
+    total_experiments = sum(len(p.experiments) for p in projects)
+    total_replicates = sum(
+        sum(len(e.replicates) for e in p.experiments)
+        for p in projects
+    )
+
+    # Get user's assigned todos
+    my_todos = todo_service.list_todos(user=user, include_done=False)
+
+    # Get recent activities
+    recent_activities = activity_service.get_recent_activities(limit=10)
+
+    # Get recent projects (most recently updated)
+    recent_projects = projects[:5]  # Already sorted by update time
+
+    stats = {
+        "project_count": len(projects),
+        "experiment_count": total_experiments,
+        "replicate_count": total_replicates,
+        "todo_count": len(my_todos),
+    }
+
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
             "user": user,
+            "stats": stats,
+            "my_todos": my_todos[:5],  # Show only 5 most recent
+            "recent_activities": recent_activities,
+            "recent_projects": recent_projects,
         },
     )
