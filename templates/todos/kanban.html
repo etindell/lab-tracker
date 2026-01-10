@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Todo Kanban - Lab Tracker{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-gray-900">Lab Tracker</h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/projects" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Projects
+                        </a>
+                        <a href="/todos" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Todos
+                        </a>
+                        {% if user.is_admin %}
+                        <a href="/admin/users" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Admin
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-700 mr-4">{{ user.name }}</span>
+                    <a href="/logout" class="text-sm text-gray-500 hover:text-gray-700">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4">
+                <h2 class="text-2xl font-bold text-gray-900">Kanban Board</h2>
+                <div class="flex items-center gap-2">
+                    <a href="/todos" class="text-sm text-gray-500 hover:text-gray-700">List View</a>
+                    <span class="text-gray-300">|</span>
+                    <span class="text-sm text-blue-600 font-medium">Board View</span>
+                </div>
+            </div>
+            <a href="/todos/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                + New Todo
+            </a>
+        </div>
+
+        <!-- Filters -->
+        <form method="GET" class="mb-6 bg-white p-4 rounded-lg shadow">
+            <div class="flex flex-wrap gap-4 items-center">
+                <div>
+                    <label for="project_id" class="block text-sm font-medium text-gray-700">Project</label>
+                    <select
+                        name="project_id"
+                        id="project_id"
+                        class="mt-1 block w-48 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        onchange="this.form.submit()"
+                    >
+                        <option value="">All Projects</option>
+                        {% for p in projects %}
+                        <option value="{{ p.id }}" {% if project_id == p.id|string %}selected{% endif %}>{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <input
+                        type="checkbox"
+                        name="my_todos"
+                        id="my_todos"
+                        value="true"
+                        {% if my_todos %}checked{% endif %}
+                        onchange="this.form.submit()"
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    >
+                    <label for="my_todos" class="ml-2 text-sm text-gray-700">My Todos Only</label>
+                </div>
+            </div>
+        </form>
+
+        <!-- Kanban columns -->
+        <div class="flex gap-4 overflow-x-auto pb-4">
+            {% for status in statuses %}
+            <div class="flex-shrink-0 w-80">
+                <div class="bg-gray-100 rounded-lg p-3">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-semibold text-gray-700">
+                            {% if status.value == 'open' %}
+                            <span class="inline-block w-3 h-3 rounded-full bg-gray-400 mr-2"></span>
+                            {% elif status.value == 'in_progress' %}
+                            <span class="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
+                            {% elif status.value == 'blocked' %}
+                            <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+                            {% elif status.value == 'done' %}
+                            <span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+                            {% endif %}
+                            {{ status.value.replace('_', ' ').title() }}
+                        </h3>
+                        <span class="text-sm text-gray-500">{{ todos_by_status[status.value]|length }}</span>
+                    </div>
+                    <div class="kanban-column space-y-3 min-h-32" data-status="{{ status.value }}">
+                        {% for todo in todos_by_status[status.value] %}
+                        <div class="kanban-card bg-white rounded-lg shadow p-3 cursor-move"
+                             data-todo-id="{{ todo.id }}"
+                             draggable="true">
+                            <a href="/todos/{{ todo.id }}" class="block">
+                                <div class="flex items-start justify-between">
+                                    <p class="font-medium text-gray-900 text-sm">{{ todo.title }}</p>
+                                    {% if todo.priority.value == "high" %}
+                                    <span class="px-1.5 py-0.5 text-xs font-semibold rounded bg-red-100 text-red-800">!</span>
+                                    {% endif %}
+                                </div>
+                                {% if todo.description %}
+                                <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ todo.description }}</p>
+                                {% endif %}
+                                <div class="flex items-center justify-between mt-2">
+                                    {% if todo.project %}
+                                    <span class="text-xs text-blue-600">{{ todo.project.name }}</span>
+                                    {% else %}
+                                    <span></span>
+                                    {% endif %}
+                                    {% if todo.assignee %}
+                                    <span class="text-xs text-gray-400">{{ todo.assignee.name }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if todo.due_date %}
+                                <div class="text-xs text-gray-400 mt-1">Due: {{ todo.due_date.strftime('%m/%d') }}</div>
+                                {% endif %}
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Sortable for each column
+    document.querySelectorAll('.kanban-column').forEach(function(column) {
+        new Sortable(column, {
+            group: 'todos',
+            animation: 150,
+            ghostClass: 'opacity-50',
+            dragClass: 'shadow-lg',
+            onEnd: function(evt) {
+                const todoId = evt.item.dataset.todoId;
+                const newStatus = evt.to.dataset.status;
+
+                // Send status update via HTMX
+                fetch(`/todos/${todoId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `status=${newStatus}`
+                }).then(response => {
+                    if (!response.ok) {
+                        // Revert on error - refresh the page
+                        window.location.reload();
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

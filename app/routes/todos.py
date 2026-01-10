@@ -105,6 +105,61 @@ async def list_todos(
     )
 
 
+@router.get("/kanban", response_class=HTMLResponse)
+async def kanban_board(
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+    project_id: Optional[str] = None,
+    my_todos: bool = True,
+):
+    """Show todo kanban board.
+
+    Args:
+        request: FastAPI request.
+        db: Database session.
+        user: Current user.
+        project_id: Filter by project.
+        my_todos: Show only user's todos.
+
+    Returns:
+        Kanban board page.
+    """
+    todo_service = TodoService(db)
+    project_service = ProjectService(db)
+
+    project = None
+    if project_id:
+        try:
+            project = project_service.get_by_id(uuid.UUID(project_id))
+        except ValueError:
+            pass
+
+    # Get todos grouped by status
+    todos_by_status = {}
+    for todo_status in TodoStatus:
+        todos_by_status[todo_status.value] = todo_service.list_todos(
+            user=user if my_todos else None,
+            status_filter=todo_status,
+            project=project,
+        )
+
+    projects = project_service.list_projects()
+
+    return templates.TemplateResponse(
+        "todos/kanban.html",
+        {
+            "request": request,
+            "user": user,
+            "todos_by_status": todos_by_status,
+            "project_id": project_id or "",
+            "my_todos": my_todos,
+            "statuses": TodoStatus,
+            "projects": projects,
+        },
+    )
+
+
 @router.get("/new", response_class=HTMLResponse)
 async def new_todo_form(
     request: Request,

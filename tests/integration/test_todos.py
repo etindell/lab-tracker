@@ -345,3 +345,215 @@ class TestChangeStatus:
 
         db_session.refresh(todo)
         assert todo.status == TodoStatus.DONE
+
+
+class TestKanbanBoard:
+    """Tests for kanban board view."""
+
+    def test_kanban_board_requires_auth(self, client):
+        """Should require authentication for kanban."""
+        response = client.get("/todos/kanban", follow_redirects=False)
+        assert response.status_code == 401
+
+    def test_kanban_board_renders(self, client, db_session):
+        """Should render kanban board."""
+        user = User(
+            email="user@example.com",
+            name="Test User",
+            password_hash=hash_password("password"),
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        client.post(
+            "/login",
+            data={"email": "user@example.com", "password": "password"},
+        )
+
+        response = client.get("/todos/kanban")
+        assert response.status_code == 200
+        assert "Kanban Board" in response.text
+
+    def test_kanban_board_shows_columns(self, client, db_session):
+        """Should show all status columns."""
+        user = User(
+            email="user@example.com",
+            name="Test User",
+            password_hash=hash_password("password"),
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        client.post(
+            "/login",
+            data={"email": "user@example.com", "password": "password"},
+        )
+
+        response = client.get("/todos/kanban")
+        assert response.status_code == 200
+        assert "Open" in response.text
+        assert "In Progress" in response.text
+        assert "Blocked" in response.text
+        assert "Done" in response.text
+
+    def test_kanban_board_with_todos(self, client, db_session):
+        """Should display todos in correct columns."""
+        user = User(
+            email="user@example.com",
+            name="Test User",
+            password_hash=hash_password("password"),
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        open_todo = Todo(
+            title="Open Task",
+            created_by=user.id,
+            assigned_to=user.id,
+            status=TodoStatus.OPEN,
+        )
+        in_progress_todo = Todo(
+            title="In Progress Task",
+            created_by=user.id,
+            assigned_to=user.id,
+            status=TodoStatus.IN_PROGRESS,
+        )
+        done_todo = Todo(
+            title="Done Task",
+            created_by=user.id,
+            assigned_to=user.id,
+            status=TodoStatus.DONE,
+        )
+        db_session.add_all([open_todo, in_progress_todo, done_todo])
+        db_session.commit()
+
+        client.post(
+            "/login",
+            data={"email": "user@example.com", "password": "password"},
+        )
+
+        response = client.get("/todos/kanban")
+        assert response.status_code == 200
+        assert "Open Task" in response.text
+        assert "In Progress Task" in response.text
+        assert "Done Task" in response.text
+
+    def test_kanban_board_filter_by_project(self, client, db_session):
+        """Should filter todos by project."""
+        user = User(
+            email="user@example.com",
+            name="Test User",
+            password_hash=hash_password("password"),
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        project1 = Project(name="Project A", created_by=user.id)
+        project2 = Project(name="Project B", created_by=user.id)
+        db_session.add_all([project1, project2])
+        db_session.commit()
+
+        todo1 = Todo(
+            title="Project A Task",
+            created_by=user.id,
+            assigned_to=user.id,
+            project_id=project1.id,
+        )
+        todo2 = Todo(
+            title="Project B Task",
+            created_by=user.id,
+            assigned_to=user.id,
+            project_id=project2.id,
+        )
+        db_session.add_all([todo1, todo2])
+        db_session.commit()
+
+        client.post(
+            "/login",
+            data={"email": "user@example.com", "password": "password"},
+        )
+
+        response = client.get(f"/todos/kanban?project_id={project1.id}")
+        assert response.status_code == 200
+        assert "Project A Task" in response.text
+        assert "Project B Task" not in response.text
+
+    def test_kanban_board_my_todos_filter(self, client, db_session):
+        """Should filter to show only user's created or assigned todos."""
+        user1 = User(
+            email="user1@example.com",
+            name="User One",
+            password_hash=hash_password("password"),
+        )
+        user2 = User(
+            email="user2@example.com",
+            name="User Two",
+            password_hash=hash_password("password"),
+        )
+        db_session.add_all([user1, user2])
+        db_session.commit()
+
+        my_todo = Todo(
+            title="My Task",
+            created_by=user1.id,
+            assigned_to=user1.id,
+        )
+        # Created by user2, assigned to user2 - should not appear for user1
+        other_todo = Todo(
+            title="Other Task",
+            created_by=user2.id,
+            assigned_to=user2.id,
+        )
+        db_session.add_all([my_todo, other_todo])
+        db_session.commit()
+
+        client.post(
+            "/login",
+            data={"email": "user1@example.com", "password": "password"},
+        )
+
+        # With my_todos=true (default) - shows todos created by or assigned to user
+        response = client.get("/todos/kanban?my_todos=true")
+        assert response.status_code == 200
+        assert "My Task" in response.text
+        assert "Other Task" not in response.text
+
+        # With my_todos=false - shows all todos
+        response = client.get("/todos/kanban?my_todos=false")
+        assert response.status_code == 200
+        assert "My Task" in response.text
+        assert "Other Task" in response.text
+
+    def test_kanban_drag_drop_status_change(self, client, db_session):
+        """Should change status when card is dragged to new column."""
+        user = User(
+            email="user@example.com",
+            name="Test User",
+            password_hash=hash_password("password"),
+        )
+        db_session.add(user)
+        db_session.commit()
+
+        todo = Todo(
+            title="Draggable Task",
+            created_by=user.id,
+            status=TodoStatus.OPEN,
+        )
+        db_session.add(todo)
+        db_session.commit()
+        todo_id = todo.id
+
+        client.post(
+            "/login",
+            data={"email": "user@example.com", "password": "password"},
+        )
+
+        # Simulate drag-drop by calling status endpoint
+        response = client.post(
+            f"/todos/{todo_id}/status",
+            data={"status": "in_progress"},
+        )
+        assert response.status_code == 200
+
+        db_session.refresh(todo)
+        assert todo.status == TodoStatus.IN_PROGRESS
