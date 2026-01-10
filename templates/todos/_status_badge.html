@@ -1,0 +1,21 @@
+<div id="status-{{ todo.id }}" class="inline-block">
+    <form hx-post="/todos/{{ todo.id }}/status"
+          hx-target="#status-{{ todo.id }}"
+          hx-swap="outerHTML"
+          class="inline"
+          onclick="event.stopPropagation();">
+        <select name="status" onchange="this.form.requestSubmit()"
+            class="text-xs font-semibold rounded-full px-2 py-1 border-0 cursor-pointer
+            {% if todo.status.value == 'open' %}bg-gray-100 text-gray-800
+            {% elif todo.status.value == 'in_progress' %}bg-blue-100 text-blue-800
+            {% elif todo.status.value == 'blocked' %}bg-red-100 text-red-800
+            {% elif todo.status.value == 'done' %}bg-green-100 text-green-800
+            {% endif %}">
+            {% for s in statuses %}
+            <option value="{{ s.value }}" {% if todo.status.value == s.value %}selected{% endif %}>
+                {{ s.value.replace('_', ' ').title() }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>

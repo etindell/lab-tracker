@@ -18,6 +18,7 @@ from app.routes.admin import router as admin_router
 from app.routes.projects import router as projects_router
 from app.routes.experiments import router as experiments_router
 from app.routes.replicates import router as replicates_router
+from app.routes.todos import router as todos_router
 
 # Configure logging
 logging.basicConfig(
@@ -59,6 +60,7 @@ app.include_router(admin_router)
 app.include_router(projects_router)
 app.include_router(experiments_router)
 app.include_router(replicates_router)
+app.include_router(todos_router)
 
 
 @app.get("/health")

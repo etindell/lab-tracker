@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}{% if todo %}Edit Todo{% else %}New Todo{% endif %} - Lab Tracker{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-gray-900">Lab Tracker</h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/projects" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Projects
+                        </a>
+                        <a href="/todos" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Todos
+                        </a>
+                        {% if user.is_admin %}
+                        <a href="/admin/users" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Admin
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-700 mr-4">{{ user.name }}</span>
+                    <a href="/logout" class="text-sm text-gray-500 hover:text-gray-700">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-2">
+                <li>
+                    <a href="/todos" class="text-gray-400 hover:text-gray-500">Todos</a>
+                </li>
+                <li class="flex items-center">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <span class="text-gray-700">{% if todo %}Edit{% else %}New{% endif %}</span>
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Main content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6">
+                            {% if todo %}Edit Todo{% else %}New Todo{% endif %}
+                        </h2>
+
+                        {% if error %}
+                        <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                            {{ error }}
+                        </div>
+                        {% endif %}
+
+                        <form method="POST" action="{% if todo %}/todos/{{ todo.id }}/edit{% else %}/todos/new{% endif %}">
+                            <div class="space-y-6">
+                                <div>
+                                    <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                                    <input
+                                        type="text"
+                                        name="title"
+                                        id="title"
+                                        required
+                                        value="{% if title is defined %}{{ title }}{% elif todo %}{{ todo.title }}{% endif %}"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        placeholder="Enter todo title"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                    <textarea
+                                        name="description"
+                                        id="description"
+                                        rows="3"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        placeholder="Describe the todo (optional)"
+                                    >{% if description is defined %}{{ description }}{% elif todo and todo.description %}{{ todo.description }}{% endif %}</textarea>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="priority" class="block text-sm font-medium text-gray-700">Priority</label>
+                                        <select
+                                            name="priority"
+                                            id="priority"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        >
+                                            {% for p in priorities %}
+                                            <option value="{{ p.value }}"
+                                                {% if priority is defined and priority == p.value %}selected
+                                                {% elif todo and todo.priority.value == p.value %}selected
+                                                {% elif not todo and p.value == "medium" %}selected{% endif %}
+                                            >{{ p.value.title() }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    {% if todo %}
+                                    <div>
+                                        <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                                        <select
+                                            name="status"
+                                            id="status"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        >
+                                            {% for s in statuses %}
+                                            <option value="{{ s.value }}"
+                                                {% if status is defined and status == s.value %}selected
+                                                {% elif todo and todo.status.value == s.value %}selected{% endif %}
+                                            >{{ s.value.replace('_', ' ').title() }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="due_date" class="block text-sm font-medium text-gray-700">Due Date</label>
+                                        <input
+                                            type="date"
+                                            name="due_date"
+                                            id="due_date"
+                                            value="{% if due_date is defined %}{{ due_date }}{% elif todo and todo.due_date %}{{ todo.due_date.strftime('%Y-%m-%d') }}{% endif %}"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        >
+                                    </div>
+
+                                    <div>
+                                        <label for="assigned_to_id" class="block text-sm font-medium text-gray-700">Assign To</label>
+                                        <select
+                                            name="assigned_to_id"
+                                            id="assigned_to_id"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        >
+                                            <option value="">Unassigned</option>
+                                            {% for u in users %}
+                                            <option value="{{ u.id }}"
+                                                {% if todo and todo.assigned_to == u.id %}selected{% endif %}
+                                            >{{ u.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label for="project_id" class="block text-sm font-medium text-gray-700">Link to Project</label>
+                                    <select
+                                        name="project_id"
+                                        id="project_id"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    >
+                                        <option value="">No Project</option>
+                                        {% for p in projects %}
+                                        <option value="{{ p.id }}"
+                                            {% if selected_project_id == p.id|string %}selected
+                                            {% elif todo and todo.project_id == p.id %}selected{% endif %}
+                                        >{{ p.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="flex justify-end gap-3 pt-4">
+                                    <a href="{% if todo %}/todos/{{ todo.id }}{% else %}/todos{% endif %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                                        {% if todo %}Update Todo{% else %}Create Todo{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

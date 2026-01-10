@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Todos - Lab Tracker{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-gray-900">Lab Tracker</h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/projects" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Projects
+                        </a>
+                        <a href="/todos" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Todos
+                        </a>
+                        {% if user.is_admin %}
+                        <a href="/admin/users" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Admin
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-700 mr-4">{{ user.name }}</span>
+                    <a href="/logout" class="text-sm text-gray-500 hover:text-gray-700">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Todos</h2>
+                <a href="/todos/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                    + New Todo
+                </a>
+            </div>
+
+            <!-- Filters -->
+            <form method="GET" class="mb-6 bg-white p-4 rounded-lg shadow">
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+                        <input
+                            type="text"
+                            name="search"
+                            id="search"
+                            value="{{ search }}"
+                            placeholder="Search by title..."
+                            class="mt-1 block w-48 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                    </div>
+                    <div>
+                        <label for="status_filter" class="block text-sm font-medium text-gray-700">Status</label>
+                        <select
+                            name="status_filter"
+                            id="status_filter"
+                            class="mt-1 block w-36 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                            <option value="all" {% if status_filter == "all" %}selected{% endif %}>All</option>
+                            {% for s in statuses %}
+                            <option value="{{ s.value }}" {% if status_filter == s.value %}selected{% endif %}>{{ s.value.replace('_', ' ').title() }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="priority_filter" class="block text-sm font-medium text-gray-700">Priority</label>
+                        <select
+                            name="priority_filter"
+                            id="priority_filter"
+                            class="mt-1 block w-28 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                            <option value="all" {% if priority_filter == "all" %}selected{% endif %}>All</option>
+                            {% for p in priorities %}
+                            <option value="{{ p.value }}" {% if priority_filter == p.value %}selected{% endif %}>{{ p.value.title() }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="project_id" class="block text-sm font-medium text-gray-700">Project</label>
+                        <select
+                            name="project_id"
+                            id="project_id"
+                            class="mt-1 block w-40 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                            <option value="">All Projects</option>
+                            {% for p in projects %}
+                            <option value="{{ p.id }}" {% if project_id == p.id|string %}selected{% endif %}>{{ p.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center">
+                            <input
+                                type="checkbox"
+                                name="my_todos"
+                                value="true"
+                                {% if my_todos %}checked{% endif %}
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            >
+                            <span class="ml-2 text-sm text-gray-700">My Todos</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input
+                                type="checkbox"
+                                name="show_done"
+                                value="true"
+                                {% if show_done %}checked{% endif %}
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            >
+                            <span class="ml-2 text-sm text-gray-700">Show Done</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Filter
+                    </button>
+                </div>
+            </form>
+
+            <!-- Todos list -->
+            {% if todos %}
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <ul class="divide-y divide-gray-200">
+                    {% for todo in todos %}
+                    <li class="hover:bg-gray-50">
+                        <a href="/todos/{{ todo.id }}" class="block px-4 py-4 sm:px-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center min-w-0 flex-1">
+                                    {% include "todos/_status_badge.html" %}
+                                    <p class="ml-3 text-sm font-medium text-gray-900 truncate">{{ todo.title }}</p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    {% if todo.priority.value == "high" %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-800">High</span>
+                                    {% elif todo.priority.value == "medium" %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded bg-yellow-100 text-yellow-800">Medium</span>
+                                    {% else %}
+                                    <span class="px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800">Low</span>
+                                    {% endif %}
+                                    {% if todo.due_date %}
+                                    <span class="text-xs text-gray-500">Due: {{ todo.due_date.strftime('%Y-%m-%d') }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center gap-4">
+                                {% if todo.project %}
+                                <span class="text-xs text-blue-600">{{ todo.project.name }}</span>
+                                {% endif %}
+                                {% if todo.assignee %}
+                                <span class="text-xs text-gray-500">Assigned to: {{ todo.assignee.name }}</span>
+                                {% endif %}
+                            </div>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <div class="text-center py-12 bg-white rounded-lg shadow">
+                <p class="text-gray-500">No todos found.</p>
+                <a href="/todos/new" class="mt-4 inline-flex items-center text-blue-600 hover:text-blue-500">
+                    Create your first todo &rarr;
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+{% endblock %}
