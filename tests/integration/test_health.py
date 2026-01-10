@@ -34,14 +34,14 @@ class TestHealthCheck:
 class TestRootEndpoint:
     """Tests for the root endpoint."""
 
-    def test_root_returns_200(self, client):
-        """Root endpoint should return 200 OK."""
-        response = client.get("/")
-        assert response.status_code == 200
+    def test_root_redirects_unauthenticated_to_login(self, client):
+        """Root endpoint should redirect unauthenticated users to login."""
+        response = client.get("/", follow_redirects=False)
+        assert response.status_code == 302
+        assert response.headers.get("location") == "/login"
 
-    def test_root_returns_welcome_message(self, client):
-        """Root endpoint should return welcome message."""
-        response = client.get("/")
-        data = response.json()
-        assert "message" in data
-        assert "Lab Tracker" in data["message"]
+    def test_root_shows_dashboard_after_following_redirect(self, client):
+        """Root endpoint should eventually show login page."""
+        response = client.get("/")  # follows redirects by default
+        assert response.status_code == 200
+        assert "Sign in" in response.text

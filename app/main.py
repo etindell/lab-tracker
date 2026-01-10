@@ -3,13 +3,17 @@
 import logging
 import sys
 from contextlib import asynccontextmanager
+from typing import Annotated, Optional
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, Request, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from app.auth.dependencies import get_current_user_optional
 from app.config import get_settings
+from app.models.user import User
+from app.routes.auth import router as auth_router
 
 # Configure logging
 logging.basicConfig(
@@ -45,6 +49,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Setup templates
 templates = Jinja2Templates(directory="templates")
 
+# Include routers
+app.include_router(auth_router)
+
 
 @app.get("/health")
 async def health_check() -> dict:
@@ -56,12 +63,28 @@ async def health_check() -> dict:
     }
 
 
-@app.get("/")
-async def root(request: Request):
-    """Root endpoint - redirects to login or dashboard."""
-    # For now, just return a simple response
-    # Will be updated when auth is implemented
-    return JSONResponse(
-        content={"message": "Welcome to Lab Tracker. Please login."},
-        status_code=200,
+@app.get("/", response_class=HTMLResponse)
+async def root(
+    request: Request,
+    user: Annotated[Optional[User], Depends(get_current_user_optional)],
+):
+    """Root endpoint - redirects to login or dashboard.
+
+    Args:
+        request: FastAPI request.
+        user: Current user if authenticated.
+
+    Returns:
+        Redirect to appropriate page.
+    """
+    if not user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+    # For now, show a simple dashboard placeholder
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "user": user,
+        },
     )
