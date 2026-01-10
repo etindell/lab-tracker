@@ -12,6 +12,7 @@ from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.experiment import ExperimentStatus
 from app.models.user import User
+from app.services.activity import ActivityService
 from app.services.experiment import ExperimentService
 from app.services.note import NoteService
 from app.services.project import ProjectService
@@ -186,6 +187,17 @@ async def create_experiment(
             description=description,
             status=parsed_status,
         )
+
+        # Log activity
+        activity_service = ActivityService(db)
+        activity_service.log_activity(
+            user=user,
+            action="create",
+            entity_type="experiment",
+            entity_id=experiment.id,
+            metadata={"name": experiment.name, "project_id": str(project.id)},
+        )
+
         return RedirectResponse(
             url=f"/projects/{project.id}/experiments/{experiment.id}",
             status_code=status.HTTP_302_FOUND,
@@ -376,6 +388,17 @@ async def update_experiment(
             description=description,
             status=parsed_status,
         )
+
+        # Log activity
+        activity_service = ActivityService(db)
+        activity_service.log_activity(
+            user=user,
+            action="update",
+            entity_type="experiment",
+            entity_id=experiment.id,
+            metadata={"name": experiment.name},
+        )
+
         return RedirectResponse(
             url=f"/projects/{project.id}/experiments/{experiment.id}",
             status_code=status.HTTP_302_FOUND,
@@ -433,6 +456,16 @@ async def archive_experiment(
     if experiment and experiment.project_id == project.id:
         experiment_service.archive_experiment(experiment)
 
+        # Log activity
+        activity_service = ActivityService(db)
+        activity_service.log_activity(
+            user=user,
+            action="archive",
+            entity_type="experiment",
+            entity_id=experiment.id,
+            metadata={"name": experiment.name},
+        )
+
     return RedirectResponse(
         url=f"/projects/{project.id}/experiments",
         status_code=status.HTTP_302_FOUND,
@@ -472,7 +505,21 @@ async def delete_experiment(
         )
 
     if experiment and experiment.project_id == project.id:
+        # Capture experiment info before deletion
+        experiment_id = experiment.id
+        experiment_name = experiment.name
+
         experiment_service.delete_experiment(experiment)
+
+        # Log activity
+        activity_service = ActivityService(db)
+        activity_service.log_activity(
+            user=user,
+            action="delete",
+            entity_type="experiment",
+            entity_id=experiment_id,
+            metadata={"name": experiment_name},
+        )
 
     return RedirectResponse(
         url=f"/projects/{project.id}/experiments",

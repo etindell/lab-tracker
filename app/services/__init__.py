@@ -6,6 +6,7 @@ from app.services.experiment import ExperimentService
 from app.services.replicate import ReplicateService
 from app.services.todo import TodoService
 from app.services.note import NoteService
+from app.services.activity import ActivityService
 from app.services.password import (
     hash_password,
     verify_password,
@@ -19,6 +20,7 @@ __all__ = [
     "ReplicateService",
     "TodoService",
     "NoteService",
+    "ActivityService",
     "hash_password",
     "verify_password",
     "generate_temp_password",

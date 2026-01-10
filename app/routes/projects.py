@@ -11,6 +11,7 @@ from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.project import ProjectStatus
 from app.models.user import User
+from app.services.activity import ActivityService
 from app.services.project import ProjectService
 
 
@@ -132,6 +133,17 @@ async def create_project(
             description=description,
             status=parsed_status,
         )
+
+        # Log activity
+        activity_service = ActivityService(db)
+        activity_service.log_activity(
+            user=user,
+            action="create",
+            entity_type="project",
+            entity_id=project.id,
+            metadata={"name": project.name},
+        )
+
         return RedirectResponse(
             url=f"/projects/{project.id}",
             status_code=status.HTTP_302_FOUND,
@@ -304,6 +316,17 @@ async def update_project(
             description=description,
             status=parsed_status,
         )
+
+        # Log activity
+        activity_service = ActivityService(db)
+        activity_service.log_activity(
+            user=user,
+            action="update",
+            entity_type="project",
+            entity_id=project.id,
+            metadata={"name": project.name},
+        )
+
         return RedirectResponse(
             url=f"/projects/{project.id}",
             status_code=status.HTTP_302_FOUND,
@@ -355,6 +378,16 @@ async def archive_project(
 
     if project:
         project_service.archive_project(project)
+
+        # Log activity
+        activity_service = ActivityService(db)
+        activity_service.log_activity(
+            user=user,
+            action="archive",
+            entity_type="project",
+            entity_id=project.id,
+            metadata={"name": project.name},
+        )
 
     return RedirectResponse(
         url="/projects",
