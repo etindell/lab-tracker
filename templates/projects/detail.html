@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - Lab Tracker{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-gray-900">Lab Tracker</h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/projects" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Projects
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-700 mr-4">{{ user.name }}</span>
+                    <a href="/logout" class="text-sm text-gray-500 hover:text-gray-700">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <!-- Breadcrumb -->
+            <nav class="mb-4">
+                <a href="/projects" class="text-blue-600 hover:text-blue-800">&larr; Back to Projects</a>
+            </nav>
+
+            <!-- Project header -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+                <div class="px-4 py-5 sm:px-6 flex justify-between items-start">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">{{ project.name }}</h2>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Created {{ project.created_at.strftime('%Y-%m-%d') }}
+                            {% if project.status.value == "active" %}
+                            <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                            {% elif project.status.value == "on_hold" %}
+                            <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">On Hold</span>
+                            {% elif project.status.value == "complete" %}
+                            <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Complete</span>
+                            {% elif project.status.value == "archived" %}
+                            <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Archived</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <a href="/projects/{{ project.id }}/edit" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Edit
+                        </a>
+                        {% if project.status.value != "archived" %}
+                        <form action="/projects/{{ project.id }}/archive" method="POST" class="inline">
+                            <button type="submit" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Archive
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if project.description %}
+                <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                    <p class="text-sm text-gray-700">{{ project.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-gray-900">{{ stats.experiment_count }}</div>
+                    <div class="text-sm text-gray-500">Experiments</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-gray-900">{{ stats.replicate_count }}</div>
+                    <div class="text-sm text-gray-500">Replicates</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-green-600">{{ stats.replicate_by_status.get('done', 0) }}</div>
+                    <div class="text-sm text-gray-500">Completed</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-yellow-600">{{ stats.replicate_by_status.get('in_progress', 0) }}</div>
+                    <div class="text-sm text-gray-500">In Progress</div>
+                </div>
+            </div>
+
+            <!-- Experiments section -->
+            <div class="bg-white shadow sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 flex justify-between items-center border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Experiments</h3>
+                    <a href="/projects/{{ project.id }}/experiments/new" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                        + New Experiment
+                    </a>
+                </div>
+                <div class="px-4 py-5 sm:px-6">
+                    {% if project.experiments %}
+                    <div class="space-y-4">
+                        {% for experiment in project.experiments %}
+                        <div class="border rounded-lg p-4 hover:bg-gray-50">
+                            <a href="/projects/{{ project.id }}/experiments/{{ experiment.id }}" class="block">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-900">{{ experiment.name }}</h4>
+                                        {% if experiment.description %}
+                                        <p class="text-sm text-gray-500 mt-1">{{ experiment.description[:100] }}{% if experiment.description|length > 100 %}...{% endif %}</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <span class="text-sm text-gray-500">{{ experiment.replicates|length }} replicates</span>
+                                        {% if experiment.status.value == "planned" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Planned</span>
+                                        {% elif experiment.status.value == "running" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Running</span>
+                                        {% elif experiment.status.value == "analyzing" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Analyzing</span>
+                                        {% elif experiment.status.value == "complete" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Complete</span>
+                                        {% elif experiment.status.value == "archived" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">Archived</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-gray-500 text-center py-4">No experiments yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

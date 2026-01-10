@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - Lab Tracker{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-gray-900">Lab Tracker</h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/projects" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Projects
+                        </a>
+                        <a href="/todos" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Todos
+                        </a>
+                        {% if user.is_admin %}
+                        <a href="/admin/users" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Admin
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-700 mr-4">{{ user.name }}</span>
+                    <a href="/logout" class="text-sm text-gray-500 hover:text-gray-700">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Projects</h2>
+                <a href="/projects/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                    + New Project
+                </a>
+            </div>
+
+            <!-- Filters -->
+            <form method="GET" class="mb-6 flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow">
+                <div>
+                    <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+                    <input
+                        type="text"
+                        name="search"
+                        id="search"
+                        value="{{ search }}"
+                        placeholder="Search by name..."
+                        class="mt-1 block w-48 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                </div>
+                <div>
+                    <label for="status_filter" class="block text-sm font-medium text-gray-700">Status</label>
+                    <select
+                        name="status_filter"
+                        id="status_filter"
+                        class="mt-1 block w-40 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                        <option value="all" {% if status_filter == "all" %}selected{% endif %}>All</option>
+                        {% for s in statuses %}
+                        <option value="{{ s.value }}" {% if status_filter == s.value %}selected{% endif %}>{{ s.value.replace('_', ' ').title() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <input
+                        type="checkbox"
+                        name="show_archived"
+                        id="show_archived"
+                        value="true"
+                        {% if show_archived %}checked{% endif %}
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    >
+                    <label for="show_archived" class="ml-2 text-sm text-gray-700">Show archived</label>
+                </div>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Filter
+                </button>
+            </form>
+
+            <!-- Projects grid -->
+            {% if projects %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for project in projects %}
+                <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
+                    <a href="/projects/{{ project.id }}" class="block">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-lg font-medium text-gray-900 truncate">{{ project.name }}</h3>
+                                {% if project.status.value == "active" %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                {% elif project.status.value == "on_hold" %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">On Hold</span>
+                                {% elif project.status.value == "complete" %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Complete</span>
+                                {% elif project.status.value == "archived" %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Archived</span>
+                                {% endif %}
+                            </div>
+                            {% if project.description %}
+                            <p class="text-sm text-gray-500 line-clamp-2">{{ project.description }}</p>
+                            {% else %}
+                            <p class="text-sm text-gray-400 italic">No description</p>
+                            {% endif %}
+                            <div class="mt-4 text-xs text-gray-400">
+                                Updated {{ project.updated_at.strftime('%Y-%m-%d') }}
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 bg-white rounded-lg shadow">
+                <p class="text-gray-500">No projects found.</p>
+                <a href="/projects/new" class="mt-4 inline-flex items-center text-blue-600 hover:text-blue-500">
+                    Create your first project &rarr;
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

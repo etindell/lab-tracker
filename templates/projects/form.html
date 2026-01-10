@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}{% if project %}Edit Project{% else %}New Project{% endif %} - Lab Tracker{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-gray-900">Lab Tracker</h1>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-700 mr-4">{{ user.name }}</span>
+                    <a href="/logout" class="text-sm text-gray-500 hover:text-gray-700">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="max-w-lg mx-auto">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    {% if project %}Edit Project{% else %}New Project{% endif %}
+                </h2>
+
+                {% if error %}
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                <form action="{% if project %}/projects/{{ project.id }}/edit{% else %}/projects/new{% endif %}" method="POST" class="space-y-6 bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Project Name</label>
+                        <input
+                            type="text"
+                            name="name"
+                            id="name"
+                            required
+                            value="{{ name if name is defined else (project.name if project else '') }}"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea
+                            name="description"
+                            id="description"
+                            rows="4"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >{{ description if description is defined else (project.description if project and project.description else '') }}</textarea>
+                    </div>
+
+                    <div>
+                        <label for="project_status" class="block text-sm font-medium text-gray-700">Status</label>
+                        <select
+                            name="project_status"
+                            id="project_status"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                            {% set current_status = project_status if project_status is defined else (project.status.value if project else 'active') %}
+                            {% for s in statuses %}
+                            <option value="{{ s.value }}" {% if current_status == s.value %}selected{% endif %}>
+                                {{ s.value.replace('_', ' ').title() }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <a href="{% if project %}/projects/{{ project.id }}{% else %}/projects{% endif %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                            {% if project %}Save Changes{% else %}Create Project{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
