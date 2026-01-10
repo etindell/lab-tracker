@@ -6,15 +6,18 @@ from contextlib import asynccontextmanager
 from typing import Annotated, Optional
 
 from fastapi import Depends, FastAPI, Request, status
+from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user_optional
 from app.config import get_settings
 from app.database import get_db
+from app.flash import get_flash_messages
 from app.models.user import User
 from app.routes.auth import router as auth_router
 from app.routes.admin import router as admin_router
@@ -66,6 +69,28 @@ app.include_router(experiments_router)
 app.include_router(replicates_router)
 app.include_router(todos_router)
 app.include_router(notes_router)
+
+
+# Exception handlers
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc: StarletteHTTPException):
+    """Handle 404 errors with custom page."""
+    return templates.TemplateResponse(
+        "errors/404.html",
+        {"request": request},
+        status_code=404,
+    )
+
+
+@app.exception_handler(500)
+async def server_error_handler(request: Request, exc: Exception):
+    """Handle 500 errors with custom page."""
+    logger.error(f"Server error: {exc}")
+    return templates.TemplateResponse(
+        "errors/500.html",
+        {"request": request},
+        status_code=500,
+    )
 
 
 @app.get("/health")
@@ -139,5 +164,6 @@ async def root(
             "my_todos": my_todos[:5],  # Show only 5 most recent
             "recent_activities": recent_activities,
             "recent_projects": recent_projects,
+            "flash_messages": get_flash_messages(request),
         },
     )

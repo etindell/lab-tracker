@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.database import get_db
+from app.flash import add_flash, get_flash_messages
 from app.models.project import ProjectStatus
 from app.models.user import User
 from app.services.activity import ActivityService
@@ -67,6 +68,7 @@ async def list_projects(
             "search": search or "",
             "show_archived": show_archived,
             "statuses": ProjectStatus,
+            "flash_messages": get_flash_messages(request),
         },
     )
 
@@ -144,6 +146,7 @@ async def create_project(
             metadata={"name": project.name},
         )
 
+        add_flash(request, f"Project '{project.name}' created successfully", "success")
         return RedirectResponse(
             url=f"/projects/{project.id}",
             status_code=status.HTTP_302_FOUND,
@@ -210,6 +213,7 @@ async def view_project(
             "user": user,
             "project": project,
             "stats": stats,
+            "flash_messages": get_flash_messages(request),
         },
     )
 
@@ -327,6 +331,7 @@ async def update_project(
             metadata={"name": project.name},
         )
 
+        add_flash(request, f"Project '{project.name}' updated successfully", "success")
         return RedirectResponse(
             url=f"/projects/{project.id}",
             status_code=status.HTTP_302_FOUND,
@@ -350,6 +355,7 @@ async def update_project(
 
 @router.post("/{project_id}/archive")
 async def archive_project(
+    request: Request,
     project_id: str,
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
@@ -357,6 +363,7 @@ async def archive_project(
     """Archive a project.
 
     Args:
+        request: FastAPI request.
         project_id: Project UUID.
         db: Database session.
         user: Current user.
@@ -377,6 +384,7 @@ async def archive_project(
         )
 
     if project:
+        project_name = project.name
         project_service.archive_project(project)
 
         # Log activity
@@ -386,8 +394,10 @@ async def archive_project(
             action="archive",
             entity_type="project",
             entity_id=project.id,
-            metadata={"name": project.name},
+            metadata={"name": project_name},
         )
+
+        add_flash(request, f"Project '{project_name}' archived", "success")
 
     return RedirectResponse(
         url="/projects",
