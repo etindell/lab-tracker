@@ -5,7 +5,8 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PORT=8000
 
 # Set work directory
 WORKDIR /app
@@ -22,9 +23,13 @@ COPY templates ./templates
 COPY static ./static
 COPY alembic.ini ./
 COPY alembic ./alembic
+COPY scripts ./scripts
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -e .
+
+# Make start script executable
+RUN chmod +x scripts/start.sh
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser && \
@@ -35,8 +40,8 @@ USER appuser
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT}/health')" || exit 1
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application with migrations
+CMD ["./scripts/start.sh"]
