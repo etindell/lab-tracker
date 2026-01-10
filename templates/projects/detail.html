@@ -75,6 +75,42 @@
                 {% endif %}
             </div>
 
+            <!-- Overall Progress -->
+            {% if stats.replicate_count > 0 %}
+            {% set total = stats.replicate_count %}
+            {% set done = stats.replicate_by_status.get('done', 0) %}
+            {% set in_progress = stats.replicate_by_status.get('in_progress', 0) %}
+            {% set blocked = stats.replicate_by_status.get('blocked', 0) %}
+            {% set planned = stats.replicate_by_status.get('planned', 0) %}
+            {% set done_pct = (done / total * 100)|round(1) %}
+            <div class="bg-white shadow rounded-lg px-4 py-5 mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-medium text-gray-700">Overall Progress</h3>
+                    <span class="text-sm text-gray-500">{{ done }}/{{ total }} replicates complete ({{ done_pct }}%)</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden flex">
+                    {% if done > 0 %}
+                    <div class="bg-blue-500 h-4" style="width: {{ (done / total * 100)|round(1) }}%" title="Done: {{ done }}"></div>
+                    {% endif %}
+                    {% if in_progress > 0 %}
+                    <div class="bg-green-500 h-4" style="width: {{ (in_progress / total * 100)|round(1) }}%" title="In Progress: {{ in_progress }}"></div>
+                    {% endif %}
+                    {% if blocked > 0 %}
+                    <div class="bg-red-500 h-4" style="width: {{ (blocked / total * 100)|round(1) }}%" title="Blocked: {{ blocked }}"></div>
+                    {% endif %}
+                    {% if planned > 0 %}
+                    <div class="bg-gray-400 h-4" style="width: {{ (planned / total * 100)|round(1) }}%" title="Planned: {{ planned }}"></div>
+                    {% endif %}
+                </div>
+                <div class="flex mt-2 text-xs gap-4">
+                    <span class="flex items-center"><span class="w-3 h-3 bg-blue-500 rounded-full mr-1"></span> Done ({{ done }})</span>
+                    <span class="flex items-center"><span class="w-3 h-3 bg-green-500 rounded-full mr-1"></span> In Progress ({{ in_progress }})</span>
+                    <span class="flex items-center"><span class="w-3 h-3 bg-red-500 rounded-full mr-1"></span> Blocked ({{ blocked }})</span>
+                    <span class="flex items-center"><span class="w-3 h-3 bg-gray-400 rounded-full mr-1"></span> Planned ({{ planned }})</span>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Stats -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white p-4 rounded-lg shadow">
@@ -110,13 +146,13 @@
                         <div class="border rounded-lg p-4 hover:bg-gray-50">
                             <a href="/projects/{{ project.id }}/experiments/{{ experiment.id }}" class="block">
                                 <div class="flex items-center justify-between">
-                                    <div>
+                                    <div class="flex-1 min-w-0">
                                         <h4 class="text-sm font-medium text-gray-900">{{ experiment.name }}</h4>
                                         {% if experiment.description %}
                                         <p class="text-sm text-gray-500 mt-1">{{ experiment.description[:100] }}{% if experiment.description|length > 100 %}...{% endif %}</p>
                                         {% endif %}
                                     </div>
-                                    <div class="flex items-center space-x-4">
+                                    <div class="flex items-center space-x-4 ml-4">
                                         <span class="text-sm text-gray-500">{{ experiment.replicates|length }} replicates</span>
                                         {% if experiment.status.value == "planned" %}
                                         <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Planned</span>
@@ -131,6 +167,34 @@
                                         {% endif %}
                                     </div>
                                 </div>
+                                <!-- Mini progress bar for replicates -->
+                                {% if experiment.replicates|length > 0 %}
+                                {% set rep_total = experiment.replicates|length %}
+                                {% set rep_done = experiment.replicates|selectattr('status.value', 'equalto', 'done')|list|length %}
+                                {% set rep_in_progress = experiment.replicates|selectattr('status.value', 'equalto', 'in_progress')|list|length %}
+                                {% set rep_blocked = experiment.replicates|selectattr('status.value', 'equalto', 'blocked')|list|length %}
+                                {% set rep_planned = experiment.replicates|selectattr('status.value', 'equalto', 'planned')|list|length %}
+                                <div class="mt-3">
+                                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>Replicate progress</span>
+                                        <span>{{ rep_done }}/{{ rep_total }} done</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden flex">
+                                        {% if rep_done > 0 %}
+                                        <div class="bg-blue-500 h-2" style="width: {{ (rep_done / rep_total * 100)|round(1) }}%"></div>
+                                        {% endif %}
+                                        {% if rep_in_progress > 0 %}
+                                        <div class="bg-green-500 h-2" style="width: {{ (rep_in_progress / rep_total * 100)|round(1) }}%"></div>
+                                        {% endif %}
+                                        {% if rep_blocked > 0 %}
+                                        <div class="bg-red-500 h-2" style="width: {{ (rep_blocked / rep_total * 100)|round(1) }}%"></div>
+                                        {% endif %}
+                                        {% if rep_planned > 0 %}
+                                        <div class="bg-gray-400 h-2" style="width: {{ (rep_planned / rep_total * 100)|round(1) }}%"></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
                             </a>
                         </div>
                         {% endfor %}

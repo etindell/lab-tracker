@@ -113,7 +113,41 @@
                             {% else %}
                             <p class="text-sm text-gray-400 italic">No description</p>
                             {% endif %}
-                            <div class="mt-4 text-xs text-gray-400">
+                            <!-- Progress bar for all replicates in project -->
+                            {% set all_replicates = [] %}
+                            {% for exp in project.experiments %}
+                                {% for rep in exp.replicates %}
+                                    {% set _ = all_replicates.append(rep) %}
+                                {% endfor %}
+                            {% endfor %}
+                            {% if all_replicates|length > 0 %}
+                            {% set rep_total = all_replicates|length %}
+                            {% set rep_done = all_replicates|selectattr('status.value', 'equalto', 'done')|list|length %}
+                            {% set rep_in_progress = all_replicates|selectattr('status.value', 'equalto', 'in_progress')|list|length %}
+                            {% set rep_blocked = all_replicates|selectattr('status.value', 'equalto', 'blocked')|list|length %}
+                            <div class="mt-3">
+                                <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                    <span>{{ project.experiments|length }} exp, {{ rep_total }} replicates</span>
+                                    <span>{{ rep_done }}/{{ rep_total }} done</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden flex">
+                                    {% if rep_done > 0 %}
+                                    <div class="bg-blue-500 h-1.5" style="width: {{ (rep_done / rep_total * 100)|round(1) }}%"></div>
+                                    {% endif %}
+                                    {% if rep_in_progress > 0 %}
+                                    <div class="bg-green-500 h-1.5" style="width: {{ (rep_in_progress / rep_total * 100)|round(1) }}%"></div>
+                                    {% endif %}
+                                    {% if rep_blocked > 0 %}
+                                    <div class="bg-red-500 h-1.5" style="width: {{ (rep_blocked / rep_total * 100)|round(1) }}%"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="mt-3 text-xs text-gray-400">
+                                {{ project.experiments|length }} experiments
+                            </div>
+                            {% endif %}
+                            <div class="mt-2 text-xs text-gray-400">
                                 Updated {{ project.updated_at.strftime('%Y-%m-%d') }}
                             </div>
                         </div>
