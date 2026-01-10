@@ -120,16 +120,16 @@
                     <dd class="mt-1 text-2xl font-semibold text-gray-900">{{ stats.replicate_count }}</dd>
                 </div>
                 <div class="bg-white shadow rounded-lg px-4 py-5">
-                    <dt class="text-sm font-medium text-gray-500">Pending</dt>
-                    <dd class="mt-1 text-2xl font-semibold text-gray-500">{{ stats.replicate_by_status.get('pending', 0) }}</dd>
+                    <dt class="text-sm font-medium text-gray-500">Planned</dt>
+                    <dd class="mt-1 text-2xl font-semibold text-gray-500">{{ stats.replicate_by_status.get('planned', 0) }}</dd>
                 </div>
                 <div class="bg-white shadow rounded-lg px-4 py-5">
-                    <dt class="text-sm font-medium text-gray-500">Running</dt>
-                    <dd class="mt-1 text-2xl font-semibold text-green-600">{{ stats.replicate_by_status.get('running', 0) }}</dd>
+                    <dt class="text-sm font-medium text-gray-500">In Progress</dt>
+                    <dd class="mt-1 text-2xl font-semibold text-green-600">{{ stats.replicate_by_status.get('in_progress', 0) }}</dd>
                 </div>
                 <div class="bg-white shadow rounded-lg px-4 py-5">
-                    <dt class="text-sm font-medium text-gray-500">Complete</dt>
-                    <dd class="mt-1 text-2xl font-semibold text-blue-600">{{ stats.replicate_by_status.get('complete', 0) }}</dd>
+                    <dt class="text-sm font-medium text-gray-500">Done</dt>
+                    <dd class="mt-1 text-2xl font-semibold text-blue-600">{{ stats.replicate_by_status.get('done', 0) }}</dd>
                 </div>
             </div>
 
@@ -162,14 +162,14 @@
                                         </a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {% if replicate.status.value == "pending" %}
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Pending</span>
-                                        {% elif replicate.status.value == "running" %}
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Running</span>
-                                        {% elif replicate.status.value == "complete" %}
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Complete</span>
-                                        {% elif replicate.status.value == "failed" %}
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failed</span>
+                                        {% if replicate.status.value == "planned" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Planned</span>
+                                        {% elif replicate.status.value == "in_progress" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">In Progress</span>
+                                        {% elif replicate.status.value == "blocked" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Blocked</span>
+                                        {% elif replicate.status.value == "done" %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Done</span>
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

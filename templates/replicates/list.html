@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Replicates - {{ experiment.name }} - Lab Tracker{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-gray-900">Lab Tracker</h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/projects" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Projects
+                        </a>
+                        <a href="/todos" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Todos
+                        </a>
+                        {% if user.is_admin %}
+                        <a href="/admin/users" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Admin
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-700 mr-4">{{ user.name }}</span>
+                    <a href="/logout" class="text-sm text-gray-500 hover:text-gray-700">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-2">
+                <li>
+                    <a href="/projects" class="text-gray-400 hover:text-gray-500">Projects</a>
+                </li>
+                <li class="flex items-center">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <a href="/projects/{{ project.id }}" class="text-gray-400 hover:text-gray-500">{{ project.name }}</a>
+                </li>
+                <li class="flex items-center">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <a href="/projects/{{ project.id }}/experiments" class="text-gray-400 hover:text-gray-500">Experiments</a>
+                </li>
+                <li class="flex items-center">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <a href="/projects/{{ project.id }}/experiments/{{ experiment.id }}" class="text-gray-400 hover:text-gray-500">{{ experiment.name }}</a>
+                </li>
+                <li class="flex items-center">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <span class="text-gray-700">Replicates</span>
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Main content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Replicates</h2>
+                <a href="/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                    + New Replicate
+                </a>
+            </div>
+
+            <!-- Filters -->
+            <form method="GET" class="mb-6 flex flex-wrap gap-4 items-end bg-white p-4 rounded-lg shadow">
+                <div>
+                    <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+                    <input
+                        type="text"
+                        name="search"
+                        id="search"
+                        value="{{ search }}"
+                        placeholder="Search by name..."
+                        class="mt-1 block w-48 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                </div>
+                <div>
+                    <label for="status_filter" class="block text-sm font-medium text-gray-700">Status</label>
+                    <select
+                        name="status_filter"
+                        id="status_filter"
+                        class="mt-1 block w-40 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                        <option value="all" {% if status_filter == "all" %}selected{% endif %}>All</option>
+                        {% for s in statuses %}
+                        <option value="{{ s.value }}" {% if status_filter == s.value %}selected{% endif %}>{{ s.value.replace('_', ' ').title() }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Filter
+                </button>
+            </form>
+
+            <!-- Replicates table -->
+            {% if replicates %}
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performer</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for replicate in replicates %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <a href="/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/{{ replicate.id }}" class="text-blue-600 hover:text-blue-800 font-medium">
+                                    {{ replicate.name }}
+                                </a>
+                                {% if replicate.summary %}
+                                <p class="text-sm text-gray-500 truncate max-w-xs">{{ replicate.summary }}</p>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% include "replicates/_status_badge.html" %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if replicate.performer %}
+                                {{ replicate.performer.name }}
+                                {% else %}
+                                <span class="text-gray-400">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ replicate.updated_at.strftime('%Y-%m-%d') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/{{ replicate.id }}/edit" class="text-gray-600 hover:text-gray-900">Edit</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-12 bg-white rounded-lg shadow">
+                <p class="text-gray-500">No replicates found.</p>
+                <a href="/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/new" class="mt-4 inline-flex items-center text-blue-600 hover:text-blue-500">
+                    Create your first replicate &rarr;
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+{% endblock %}

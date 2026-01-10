@@ -1,0 +1,20 @@
+<div id="status-{{ replicate.id }}" class="inline-block">
+    <form hx-post="/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/{{ replicate.id }}/status"
+          hx-target="#status-{{ replicate.id }}"
+          hx-swap="outerHTML"
+          class="inline">
+        <select name="status" onchange="this.form.requestSubmit()"
+            class="text-xs font-semibold rounded-full px-2 py-1 border-0 cursor-pointer
+            {% if replicate.status.value == 'planned' %}bg-gray-100 text-gray-800
+            {% elif replicate.status.value == 'in_progress' %}bg-green-100 text-green-800
+            {% elif replicate.status.value == 'blocked' %}bg-red-100 text-red-800
+            {% elif replicate.status.value == 'done' %}bg-blue-100 text-blue-800
+            {% endif %}">
+            {% for s in statuses %}
+            <option value="{{ s.value }}" {% if replicate.status.value == s.value %}selected{% endif %}>
+                {{ s.value.replace('_', ' ').title() }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>

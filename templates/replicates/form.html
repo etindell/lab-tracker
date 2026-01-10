@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}{% if replicate %}Edit Replicate{% else %}New Replicate{% endif %} - {{ experiment.name }} - Lab Tracker{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-xl font-bold text-gray-900">Lab Tracker</h1>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <a href="/projects" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Projects
+                        </a>
+                        <a href="/todos" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Todos
+                        </a>
+                        {% if user.is_admin %}
+                        <a href="/admin/users" class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Admin
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-700 mr-4">{{ user.name }}</span>
+                    <a href="/logout" class="text-sm text-gray-500 hover:text-gray-700">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-2">
+                <li>
+                    <a href="/projects" class="text-gray-400 hover:text-gray-500">Projects</a>
+                </li>
+                <li class="flex items-center">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <a href="/projects/{{ project.id }}" class="text-gray-400 hover:text-gray-500">{{ project.name }}</a>
+                </li>
+                <li class="flex items-center">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <a href="/projects/{{ project.id }}/experiments" class="text-gray-400 hover:text-gray-500">Experiments</a>
+                </li>
+                <li class="flex items-center">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <a href="/projects/{{ project.id }}/experiments/{{ experiment.id }}" class="text-gray-400 hover:text-gray-500">{{ experiment.name }}</a>
+                </li>
+                <li class="flex items-center">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <a href="/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates" class="text-gray-400 hover:text-gray-500">Replicates</a>
+                </li>
+                <li class="flex items-center">
+                    <span class="text-gray-400 mx-2">/</span>
+                    <span class="text-gray-700">{% if replicate %}Edit{% else %}New{% endif %}</span>
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Main content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-4 py-5 sm:p-6">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6">
+                            {% if replicate %}Edit Replicate{% else %}New Replicate{% endif %}
+                        </h2>
+
+                        {% if error %}
+                        <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                            {{ error }}
+                        </div>
+                        {% endif %}
+
+                        <form method="POST" action="{% if replicate %}/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/{{ replicate.id }}/edit{% else %}/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/new{% endif %}">
+                            <div class="space-y-6">
+                                <div>
+                                    <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        id="name"
+                                        required
+                                        value="{% if name is defined %}{{ name }}{% elif replicate %}{{ replicate.name }}{% endif %}"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        placeholder="Enter replicate name"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label for="summary" class="block text-sm font-medium text-gray-700">Summary</label>
+                                    <textarea
+                                        name="summary"
+                                        id="summary"
+                                        rows="3"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        placeholder="Brief summary of the replicate (optional)"
+                                    >{% if summary is defined %}{{ summary }}{% elif replicate and replicate.summary %}{{ replicate.summary }}{% endif %}</textarea>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="replicate_status" class="block text-sm font-medium text-gray-700">Status</label>
+                                        <select
+                                            name="replicate_status"
+                                            id="replicate_status"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        >
+                                            {% for s in statuses %}
+                                            <option value="{{ s.value }}"
+                                                {% if replicate_status is defined and replicate_status == s.value %}selected
+                                                {% elif replicate and replicate.status.value == s.value %}selected
+                                                {% elif not replicate and s.value == "planned" %}selected{% endif %}
+                                            >{{ s.value.replace('_', ' ').title() }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label for="performed_by_id" class="block text-sm font-medium text-gray-700">Performer</label>
+                                        <select
+                                            name="performed_by_id"
+                                            id="performed_by_id"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        >
+                                            <option value="">Unassigned</option>
+                                            {% for u in users %}
+                                            <option value="{{ u.id }}"
+                                                {% if replicate and replicate.performed_by == u.id %}selected{% endif %}
+                                            >{{ u.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label for="results_link" class="block text-sm font-medium text-gray-700">Results Link</label>
+                                    <input
+                                        type="url"
+                                        name="results_link"
+                                        id="results_link"
+                                        value="{% if results_link is defined %}{{ results_link }}{% elif replicate and replicate.results_link %}{{ replicate.results_link }}{% endif %}"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        placeholder="https://example.com/results (optional)"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label for="notes_text" class="block text-sm font-medium text-gray-700">Notes</label>
+                                    <textarea
+                                        name="notes_text"
+                                        id="notes_text"
+                                        rows="4"
+                                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        placeholder="Additional notes (optional)"
+                                    >{% if notes_text is defined %}{{ notes_text }}{% elif replicate and replicate.notes_text %}{{ replicate.notes_text }}{% endif %}</textarea>
+                                </div>
+
+                                <div class="flex justify-end gap-3 pt-4">
+                                    <a href="{% if replicate %}/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates/{{ replicate.id }}{% else %}/projects/{{ project.id }}/experiments/{{ experiment.id }}/replicates{% endif %}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                        Cancel
+                                    </a>
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                                        {% if replicate %}Update Replicate{% else %}Create Replicate{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
