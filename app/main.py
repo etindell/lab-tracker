@@ -42,6 +42,7 @@ settings = get_settings()
 
 def run_migrations():
     """Run database migrations on startup."""
+    from sqlalchemy import inspect
     from app.database import engine, Base
     from app import models  # Import all models to register them
 
@@ -53,14 +54,23 @@ def run_migrations():
             text=True,
             timeout=60,
         )
-        if result.returncode == 0:
-            logger.info("Database migrations completed successfully")
-            logger.info(f"Alembic output: {result.stdout}")
-        else:
-            logger.warning(f"Alembic failed, trying create_all: {result.stderr}")
-            # Fallback: create tables directly
+        logger.info(f"Alembic result: {result.returncode}")
+        if result.stdout:
+            logger.info(f"Alembic stdout: {result.stdout}")
+        if result.stderr:
+            logger.info(f"Alembic stderr: {result.stderr}")
+
+        # Check if tables actually exist after alembic
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        logger.info(f"Tables after alembic: {tables}")
+
+        if "users" not in tables:
+            logger.info("Users table missing, running create_all...")
             Base.metadata.create_all(bind=engine)
-            logger.info("Tables created via create_all")
+            tables_after = inspect(engine).get_table_names()
+            logger.info(f"Tables after create_all: {tables_after}")
+
     except Exception as e:
         logger.warning(f"Migration error: {e}, trying create_all fallback")
         try:
