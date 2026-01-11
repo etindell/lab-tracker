@@ -1,6 +1,8 @@
 """FastAPI application entry point."""
 
 import logging
+import os
+import subprocess
 import sys
 from contextlib import asynccontextmanager
 from typing import Annotated, Optional
@@ -38,10 +40,63 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
+def run_migrations():
+    """Run database migrations on startup."""
+    try:
+        logger.info("Running database migrations...")
+        result = subprocess.run(
+            ["alembic", "upgrade", "head"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if result.returncode == 0:
+            logger.info("Database migrations completed successfully")
+        else:
+            logger.error(f"Migration failed: {result.stderr}")
+    except Exception as e:
+        logger.error(f"Migration error: {e}")
+
+
+def create_admin_user():
+    """Create default admin user if not exists."""
+    from app.database import SessionLocal
+    from app.services.user import UserService
+    from app.services.password import generate_temp_password
+
+    db = SessionLocal()
+    try:
+        service = UserService(db)
+        admin = service.get_by_email("admin@labtracker.local")
+        if not admin:
+            password = generate_temp_password()
+            service.create_user(
+                email="admin@labtracker.local",
+                name="Admin",
+                password=password,
+                is_admin=True,
+            )
+            logger.info(f"Created admin user: admin@labtracker.local")
+            logger.info(f"Temporary password: {password}")
+            logger.info("Please change this password after first login!")
+        else:
+            logger.info("Admin user already exists")
+    except Exception as e:
+        logger.error(f"Error creating admin user: {e}")
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     logger.info(f"Starting {settings.app_name} in {settings.environment} mode")
+
+    # Run migrations and create admin on startup
+    if settings.is_production:
+        run_migrations()
+        create_admin_user()
+
     yield
     logger.info(f"Shutting down {settings.app_name}")
 
