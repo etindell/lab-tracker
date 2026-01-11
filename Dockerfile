@@ -44,5 +44,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT}/health')" || exit 1
 
-# Run the application with migrations
-CMD ["./scripts/start.sh"]
+# Run the application (migrations will run on first request or manually)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
