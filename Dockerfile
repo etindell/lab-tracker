@@ -45,4 +45,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT}/health')" || exit 1
 
 # Run the application using start script (runs migrations and creates admin user)
-CMD ["./scripts/start.sh"]
+CMD /bin/bash ./scripts/start.sh
