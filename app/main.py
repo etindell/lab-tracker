@@ -42,6 +42,9 @@ settings = get_settings()
 
 def run_migrations():
     """Run database migrations on startup."""
+    from app.database import engine, Base
+    from app import models  # Import all models to register them
+
     try:
         logger.info("Running database migrations...")
         result = subprocess.run(
@@ -52,10 +55,19 @@ def run_migrations():
         )
         if result.returncode == 0:
             logger.info("Database migrations completed successfully")
+            logger.info(f"Alembic output: {result.stdout}")
         else:
-            logger.error(f"Migration failed: {result.stderr}")
+            logger.warning(f"Alembic failed, trying create_all: {result.stderr}")
+            # Fallback: create tables directly
+            Base.metadata.create_all(bind=engine)
+            logger.info("Tables created via create_all")
     except Exception as e:
-        logger.error(f"Migration error: {e}")
+        logger.warning(f"Migration error: {e}, trying create_all fallback")
+        try:
+            Base.metadata.create_all(bind=engine)
+            logger.info("Tables created via create_all fallback")
+        except Exception as e2:
+            logger.error(f"create_all also failed: {e2}")
 
 
 def create_admin_user():
