@@ -81,7 +81,7 @@ def run_migrations():
 
 
 def create_admin_user():
-    """Create default admin user if not exists."""
+    """Create default admin user if not exists, or reset password if RESET_ADMIN env var is set."""
     from app.database import SessionLocal
     from app.services.user import UserService
     from app.services.password import generate_temp_password
@@ -90,6 +90,8 @@ def create_admin_user():
     try:
         service = UserService(db)
         admin = service.get_by_email("admin@labtracker.local")
+        reset_admin = os.environ.get("RESET_ADMIN", "").lower() == "true"
+
         if not admin:
             password = generate_temp_password()
             service.create_user(
@@ -99,10 +101,16 @@ def create_admin_user():
                 is_admin=True,
             )
             logger.info(f"Created admin user: admin@labtracker.local")
-            logger.info(f"Temporary password: {password}")
+            logger.info(f"PASSWORD: {password}")
+            logger.info("Please change this password after first login!")
+        elif reset_admin:
+            password = generate_temp_password()
+            service.reset_password(admin, password)
+            logger.info(f"Reset admin password for: admin@labtracker.local")
+            logger.info(f"PASSWORD: {password}")
             logger.info("Please change this password after first login!")
         else:
-            logger.info("Admin user already exists")
+            logger.info("Admin user already exists (set RESET_ADMIN=true to reset password)")
     except Exception as e:
         logger.error(f"Error creating admin user: {e}")
     finally:
