@@ -14,6 +14,7 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project files
@@ -28,8 +29,8 @@ COPY scripts ./scripts
 # Install Python dependencies
 RUN pip install --no-cache-dir -e .
 
-# Make start script executable
-RUN chmod +x scripts/start.sh
+# Fix line endings and make start script executable
+RUN dos2unix scripts/start.sh && chmod +x scripts/start.sh
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser && \
